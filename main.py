@@ -1,4 +1,5 @@
 import numpy
+import numpy as np
 
 
 def distance_to_center_of_mass(target_mass, other_mass, total_separation) -> float:
@@ -20,6 +21,8 @@ bh2_mass = 4 * (10 ** 30)  # kg
 
 test_mass_position = numpy.array([1, 1])  # the observer
 test_mass = 60  # kilograms
+
+initial_distance = distance_between_two_points(bh1_position, bh2_position)
 
 # -- calculations --
 
@@ -67,22 +70,19 @@ def test_mass_newtonian_force_overtime(time: int) -> numpy.ndarray:
     return force1 + force2
 
 
-def calculate_separation_over_time(time: float, initial_distance: float) -> float:
+def calculate_separation_over_time(time: float) -> float:
+    return (initial_distance - 256/5 * ((gravitational_constant**3 * bh1_mass * bh2_mass * (bh1_mass + bh2_mass)) / speed_of_light**5) * time) ** 1/4
 
-    loss_factor = (256.0 / 5.0) * ((gravitational_constant ** 3 * bh1_mass * bh2_mass * (bh1_mass + bh2_mass)) / (speed_of_light ** 5)) * time
-    bracket_content = initial_distance ** 4 - loss_factor
+def calculate_orbital_frequency_overtime(time: float):
+    return 1/np.pi * numpy.sqrt((gravitational_constant * (bh1_mass + bh2_mass)) / (calculate_separation_over_time(time)**3))
 
-    if bracket_content <= 0:
-        return 0.0
-
-    return bracket_content ** (1 / 4)
-
+def power_emitted_over_time(time: float):
+    return 32/5 * gravitational_constant**4/speed_of_light**5 * ((bh1_mass * bh2_mass)**2 * (bh1_mass + bh2_mass)) / calculate_separation_over_time(time)
 
 print("Test mass newtonian force vector (t=0) is: ", test_mass_newtonian_force_overtime(0))
 
 print("--------------------------------------")
-initial_distance = distance_between_two_points(bh1_position, bh2_position)
-for t in range(0, 10000000, 1000000):
-    current_distance = calculate_separation_over_time(t, initial_distance)
 
+for t in range(0, 10000000, 1000000):
+    current_distance = calculate_separation_over_time(t)
     print(f"t={t}: BH1 {bh_position_overtime(t, 1)}, BH2 {bh_position_overtime(t, 2)}")
