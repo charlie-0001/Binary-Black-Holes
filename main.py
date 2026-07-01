@@ -17,7 +17,7 @@ bh1_mass = 4 * (10 ** 30)  # kg
 bh2_position = numpy.array([-1000000.0, -1000000.0]) # meters
 bh2_mass = 4 * (10 ** 30)  # kg
 
-test_mass_position = numpy.array([1.0, 1.0])  # the observer
+test_mass_position = numpy.array([1e22, 1e22])  # the observer
 test_mass = 60  # kilograms
 
 initial_distance = distance_between_two_points(bh1_position, bh2_position)
@@ -57,10 +57,9 @@ def calculate_separation_over_time(time: float) -> float:
         return inner_term ** (1 / 4)
 
 def strain_amplitude_changes_over_time(time: float) -> float:
-    # distance from origin (center of mass) to the observer
+    # R = distance from origin (center of mass) to the observer
     R = numpy.linalg.norm(test_mass_position - numpy.array([0, 0]))
     d_t = calculate_separation_over_time(time)
-
     return (4 * (gravitational_constant ** 2) * bh1_mass * bh2_mass) / ((speed_of_light ** 4) * R * d_t)
 
 def waveform_over_time_plus(time: float, phase: float) -> float:
@@ -69,7 +68,6 @@ def waveform_over_time_plus(time: float, phase: float) -> float:
 def waveform_over_time_cross(time: float, phase: float) -> float:
     return strain_amplitude_changes_over_time(time) * numpy.sin(2 * phase)
 
-
 print("--------------------------------------")
 
 orbital_phase = 0.0
@@ -77,16 +75,28 @@ dt = 1  # loop step size in seconds
 for t in range(0, 100, dt):
     current_distance = calculate_separation_over_time(t)
 
-    omega_current = numpy.sqrt((gravitational_constant * (bh1_mass + bh2_mass)) / (current_distance ** 3))
-
     if current_distance == 0.0:
         print(f"t={t}s: Black holes have merged.")
         break
 
-    if t > 0:
-        orbital_phase += omega_current * dt
+    # calculate the current distance from the center of mass for each black hole
+    # since bh1_mass == bh2_mass, its just half the total separation
+    r_current = current_distance / 2.0
+
+    bh1_x = r_current * numpy.cos(orbital_phase)
+    bh1_y = r_current * numpy.sin(orbital_phase)
+
+    bh1_pos_current = numpy.array([bh1_x, bh1_y])
+    bh2_pos_current = -bh1_pos_current
 
     h_plus = waveform_over_time_plus(t, orbital_phase)
     h_cross = waveform_over_time_cross(t, orbital_phase)
+    strain_amplitude_change = strain_amplitude_changes_over_time(t)
 
-    print(f"t={t}s | Separation: {current_distance:.2f}m | Phase: {orbital_phase:.2f} rad | h_plus: {h_plus:.2e}")
+    print(f"t={t}s | Separation: {current_distance:.2f}m")
+    print(f"   BH1 Position: [{bh1_pos_current[0]:.2f}, {bh1_pos_current[1]:.2f}]")
+    print(f"   BH2 Position: [{bh2_pos_current[0]:.2f}, {bh2_pos_current[1]:.2f}]")
+    print(f"   Phase: {orbital_phase:.2f} rad | h_plus: {h_plus:.2e} | h_cross: {h_cross:.2e}\n")
+
+    omega_current = numpy.sqrt((gravitational_constant * (bh1_mass + bh2_mass)) / (current_distance ** 3))
+    orbital_phase += omega_current * dt
