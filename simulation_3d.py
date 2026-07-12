@@ -19,9 +19,6 @@ def main():
     clock = pygame.time.Clock()
     running = True
 
-    # points = numpy.asarray([[1, 1, 1, 1, 1], [4, 2, 0, 1, 1], [1, 0.5, 3, 1, 1]])
-    # triangles = numpy.asarray([[0, 1, 2]])
-
     base_directory = Path(__file__).resolve().parent
     mesh_path = base_directory / "meshes" / "cube.obj"
     points, triangles = read_obj(mesh_path)
