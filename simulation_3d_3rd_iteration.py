@@ -3,7 +3,7 @@ import numpy
 from pathlib import Path
 
 pygame.init()
-pygame.display.set_caption("3D icosphere")
+pygame.display.set_caption("3D Rendering Engine")
 window = pygame.display.set_mode((1000, 1000))
 clock = pygame.time.Clock()
 
@@ -54,7 +54,7 @@ def read_object(path):
                     edges.append([ids[0],ids[2],ids[3]])
     return numpy.array(vertices, float), numpy.array(edges, int)
 
-vertices, edges = read_object(Path(__file__).parent/"meshes"/"icosphere.obj") # read the file
+vertices, edges = read_object(Path(__file__).parent/"meshes"/"cube.obj") # read the file
 
 running = True
 while running:
@@ -85,9 +85,11 @@ while running:
         p2 = projected_points[face[1]]
         p3 = projected_points[face[2]]
 
-        pygame.draw.line(surface, (255, 255, 255), p1, p2, 2)
-        pygame.draw.line(surface, (255, 255, 255), p2, p3, 2)
-        pygame.draw.line(surface, (255, 255, 255), p3, p1, 2)
+        pygame.draw.polygon(surface, (255,255,255), [p1, p3, p2], 3)
+
+        # pygame.draw.line(surface, (255, 255, 255), p1, p2, 2)
+        # pygame.draw.line(surface, (255, 255, 255), p2, p3, 2)
+        # pygame.draw.line(surface, (255, 255, 255), p3, p1, 2)
 
     pygame.display.flip()
     clock.tick(120)
