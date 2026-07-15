@@ -22,8 +22,9 @@ def main():
     base_directory = Path(__file__).resolve().parent
     mesh_path = base_directory / "meshes" / "cube.obj"
     points, triangles = read_obj(mesh_path)
-    camera = numpy.asarray([13, 0.5, 2, 3.3, 0]) # the 4th and 5th entry are horizontal and vertical rotation
+    camera = numpy.asarray([0, 0, -20, 0, 0]) # the 4th and 5th entry are horizontal and vertical rotation
     rotation_angle = 0.0
+    orbital_angle = 0.0
 
     while running:
         surface.fill([0, 0, 0])
@@ -32,7 +33,9 @@ def main():
                 running = False
 
         rotation_angle += 0.01
-        rotated_points = rotate_vertices_y(points, rotation_angle)
+        # orbital_angle += 0.01
+
+        rotated_points = rotate_vertices_y(points, rotation_angle, orbital_angle)
         project_points(rotated_points, camera)
 
         for index in range(len(triangles)):
@@ -42,46 +45,83 @@ def main():
 
         screen.blit(surface, (0, 0))
         pygame.display.update()
-        camera = camera + numpy.asarray([0, 0, 0, 0, 0])
+        # camera = camera + numpy.asarray([0, 0, 0, 0, 0])
         clock.tick(120)
 
 def project_points(points, camera):
+    """
+    camera = [x, y, z, yaw, pitch]
+    yaw   = horizontal rotation (radians)
+    pitch = vertical rotation (radians)
+    """
+
+    aspect = SCREEN_WIDTH / SCREEN_HEIGHT
+    f = 1 / numpy.tan(FOV_VERTICAL / 2)
+
+    cos_yaw = numpy.cos(-camera[3])
+    sin_yaw = numpy.sin(-camera[3])
+
+    cos_pitch = numpy.cos(-camera[4])
+    sin_pitch = numpy.sin(-camera[4])
+
     for point in points:
-        h_angle_camera_point = numpy.arctan((point[2] - camera[2]) / (point[0] - camera[0] + 1e-16))
-        if abs(camera[0] + numpy.cos(h_angle_camera_point) - point[0]) > abs(camera[0] - point[0]):
-            h_angle_camera_point = (h_angle_camera_point - numpy.pi) % (2 * numpy.pi)
-        h_angle = (h_angle_camera_point - camera[3]) % (2 * numpy.pi)
-        if h_angle > numpy.pi: h_angle = h_angle - 2 * numpy.pi
-        point[3] = SCREEN_WIDTH * h_angle / FOV_HORIZONTAL + SCREEN_WIDTH / 2
-        distance = numpy.sqrt((point[0] - camera[0])**2 + (point[1] - camera[1]) ** 2 + (point[2] - camera[2]) ** 2)
-        v_angle_camera_point = numpy.arcsin((camera[1] - point[1]) / distance)
-        v_angle = (v_angle_camera_point - camera[4]) % (2 * numpy.pi)
-        if v_angle > numpy.pi: v_angle = v_angle - 2 * numpy.pi
-        point[4] = SCREEN_HEIGHT * v_angle / FOV_VERTICAL + SCREEN_HEIGHT / 2
+
+        # translate into camera space
+        x = point[0] - camera[0]
+        y = point[1] - camera[1]
+        z = point[2] - camera[2]
+
+        # rotate around Y (yaw)
+        x2 = x * cos_yaw - z * sin_yaw
+        z2 = x * sin_yaw + z * cos_yaw
+
+        # rotate around X (pitch)
+        y2 = y * cos_pitch - z2 * sin_pitch
+        z3 = y * sin_pitch + z2 * cos_pitch
+
+        # behind camera?
+        if z3 <= 0.01:
+            point[3] = -10000
+            point[4] = -10000
+            continue
+
+        # perspective divide
+        ndc_x = (x2 * f / aspect) / z3
+        ndc_y = (y2 * f) / z3
+
+        point[3] = (ndc_x + 1) * SCREEN_WIDTH / 2
+        point[4] = (1 - ndc_y) * SCREEN_HEIGHT / 2
 
 
-def rotate_vertices_y(points, angle):
+def rotate_vertices_y(points, spin_angle, orbit_angle):
     rotated_points = points.copy()
 
     center_x = numpy.mean(points[:, 0])
-    center_y = numpy.mean(points[:, 1])
     center_z = numpy.mean(points[:, 2])
 
-    cos_a = numpy.cos(angle)
-    sin_a = numpy.sin(angle)
+    cos_s, sin_s = numpy.cos(spin_angle), numpy.sin(spin_angle)
+    cos_o, sin_o = numpy.cos(orbit_angle), numpy.sin(orbit_angle)
+
+    orbit_radius = 0  # distance from the rotation center
 
     for point in rotated_points:
-        # translate point back to origin (relative to its center)
-        x = point[0] - center_x
-        z = point[2] - center_z
+        # spin the vertex around the cube's own local center
+        x_local = point[0] - center_x
+        z_local = point[2] - center_z
 
-        # apply y-axis rotation matrix math
-        new_x = x * cos_a - z * sin_a
-        new_z = x * sin_a + z * cos_a
+        spun_x = x_local * cos_s - z_local * sin_s
+        spun_z = x_local * sin_s + z_local * cos_s
 
-        # translate back to original world position
-        point[0] = new_x + center_x
-        point[2] = new_z + center_z
+        # push the spun cube out to its orbital radius
+        x_orbit = spun_x + orbit_radius
+        z_orbit = spun_z
+
+        # rotate that entire orbital position around the world origin (0, 0)
+        new_x = x_orbit * cos_o - z_orbit * sin_o
+        new_z = x_orbit * sin_o + z_orbit * cos_o
+
+        point[0] = new_x
+        point[2] = new_z
 
     return rotated_points
 
