@@ -1,3 +1,4 @@
+from equations import BlackHoleData
 import pygame
 import numpy
 from pathlib import Path
@@ -13,11 +14,8 @@ surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 FOV = 400
 CAMERA_DISTANCE = 4.0
 
-angle_x = 0
-angle_y = 0
-
-def get_rotation_matrix(ax, ay):
-    """creates a combined 3d rotation matrix for x and y axes"""
+def get_rotation_matrix(ax, ay, az):
+    """creates a combined 3d rotation matrix for x, y and z axes"""
 
     rx = numpy.array([
         [1, 0, 0],
@@ -30,7 +28,38 @@ def get_rotation_matrix(ax, ay):
         [0, 1, 0],
         [-numpy.sin(ay), 0, numpy.cos(ay)]
     ])
-    return numpy.dot(ry, rx)
+
+    rz = numpy.array([
+        [numpy.cos(az), -numpy.sin(az), 0],
+        [numpy.sin(az), numpy.cos(az), 0],
+        [0, 0, 1]
+    ])
+
+    return ry @ rx @ rz
+
+def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, orbital_radius_z, time):
+    projected_points = {}
+    orbit_x = numpy.cos(time) * orbital_radius_x
+    orbit_y = numpy.sin(time) * orbital_radius_y
+    orbit_z = numpy.sin(time) * orbital_radius_z
+    rot_matrix = get_rotation_matrix(x, y, z)
+
+    for i, vertex in enumerate(vertices):
+        rotated = numpy.dot(rot_matrix, vertex)  # dot product of rotation matrix and vertex. prints 3 items in an array.
+        z_depth = rotated[2] + CAMERA_DISTANCE + orbit_z  # translate object so it sits in front of camera
+
+        x_proj = int(((rotated[0] + orbit_x) * FOV) / z_depth) + SCREEN_WIDTH // 2
+        y_proj = int(((rotated[1] + orbit_y) * FOV) / z_depth) + SCREEN_HEIGHT // 2
+
+        projected_points[i] = (x_proj, y_proj)
+        pygame.draw.circle(surface, (255, 255, 255), (x_proj, y_proj), 4)
+
+    for face in edges:
+        p1 = projected_points[face[0]]
+        p2 = projected_points[face[1]]
+        p3 = projected_points[face[2]]
+
+        pygame.draw.polygon(surface, (255, 255, 255), [p1, p3, p2], 3)
 
 def read_object(path):
     vertices = []
@@ -54,42 +83,31 @@ def read_object(path):
                     edges.append([ids[0],ids[2],ids[3]])
     return numpy.array(vertices, float), numpy.array(edges, int)
 
-vertices, edges = read_object(Path(__file__).parent/"meshes"/"cube.obj") # read the file
+vertices, edges = read_object(Path(__file__).parent/"meshes"/"icosphere.obj") # read the file
+vertices2, edges2 = read_object(Path(__file__).parent/"meshes"/"cube.obj") # read the file
+
+angle_x = 0
+angle_y = 0
+angle_z = 0
+
+elapsed_time = 0
+simulation = BlackHoleData()
 
 running = True
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
     surface.fill((0, 0, 0))
 
-    angle_x += 0.01
-    angle_y += 0.015
 
-    rot_matrix = get_rotation_matrix(angle_x, angle_y)
 
-    projected_points = {}
-    for i, vertex in enumerate(vertices):
-        rotated = numpy.dot(rot_matrix, vertex) # dot product of rotation matrix and vertex. prints 3 items in an array.
-        z_depth = rotated[2] + CAMERA_DISTANCE # translate object so it sits in front of camera
+    spin_object(vertices, edges, angle_x, angle_y, angle_z, 3, 3, 0, elapsed_time)
 
-        x_proj = int((rotated[0] * FOV) / z_depth) + SCREEN_WIDTH // 2 #fov stuff
-        y_proj = int((rotated[1] * FOV) / z_depth) + SCREEN_HEIGHT // 2
-
-        projected_points[i] = (x_proj, y_proj)
-        pygame.draw.circle(surface, (255, 255, 255), (x_proj, y_proj), 4)
-
-    for face in edges:
-        p1 = projected_points[face[0]]
-        p2 = projected_points[face[1]]
-        p3 = projected_points[face[2]]
-
-        pygame.draw.polygon(surface, (255,255,255), [p1, p3, p2], 3)
-
-        # pygame.draw.line(surface, (255, 255, 255), p1, p2, 2)
-        # pygame.draw.line(surface, (255, 255, 255), p2, p3, 2)
-        # pygame.draw.line(surface, (255, 255, 255), p3, p1, 2)
+    angle_x += 0
+    angle_y += 0
+    angle_z += 0
+    elapsed_time += 0.01
 
     pygame.display.flip()
-    clock.tick(120)
+    clock.tick(90)
