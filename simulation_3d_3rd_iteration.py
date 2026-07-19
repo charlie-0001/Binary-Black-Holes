@@ -12,8 +12,11 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 1000
 surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 FOV = 400
-CAMERA_DISTANCE = 4.0
-
+camera_distance = 4.0
+camera_pitch = 0.0
+camera_x = 0.0
+camera_y = 0.0
+mouse_x, mouse_y = pygame.mouse.get_pos()
 
 def get_rotation_matrix(ax, ay, az):
     rx = numpy.array([
@@ -44,15 +47,25 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
 
     rot_matrix = get_rotation_matrix(x, y, z)
 
+    cos_pitch = numpy.cos(camera_pitch)
+    sin_pitch = numpy.sin(camera_pitch)
+
     for i, vertex in enumerate(vertices):
         rotated = numpy.dot(rot_matrix, vertex)
-        z_depth = rotated[2] + CAMERA_DISTANCE + orbit_z
 
-        # Prevent division by zero if object gets too close to camera
+        world_x = rotated[0] + orbit_x
+        world_y = rotated[1] + orbit_y
+        world_z = rotated[2] + orbit_z
+
+        pitched_x = world_x
+        pitched_y = world_y * cos_pitch - world_z * sin_pitch
+        pitched_z = world_z * sin_pitch + world_z * cos_pitch
+
+        z_depth = pitched_z + camera_distance
         if z_depth <= 0.1: z_depth = 0.1
 
-        x_proj = int(((rotated[0] + orbit_x) * FOV) / z_depth) + SCREEN_WIDTH // 2
-        y_proj = int(((rotated[1] + orbit_y) * FOV) / z_depth) + SCREEN_HEIGHT // 2
+        x_proj = int(((pitched_x - camera_x) * FOV) / z_depth) + SCREEN_WIDTH // 2
+        y_proj = int(((pitched_y - camera_y) * FOV) / z_depth) + SCREEN_HEIGHT // 2
 
         projected_points[i] = (x_proj, y_proj)
         pygame.draw.circle(surface, (255, 255, 255), (x_proj, y_proj), 4)
@@ -99,7 +112,7 @@ elapsed_time = 0.0
 orbital_phase = 0.0
 
 # small dt to ensure math doesnt blow up
-# while updating 90 times a second.
+# while updating 90 times a second
 dt = 0.0001
 
 running = True
@@ -107,6 +120,24 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+        current_mouse_x, current_mouse_y = pygame.mouse.get_pos()
+        mouse_buttons = pygame.mouse.get_pressed()
+
+        change_x = current_mouse_x - mouse_x
+        change_y = current_mouse_y - mouse_y
+
+        if mouse_buttons[0]:
+            camera_distance += change_y / 50.0
+            if camera_distance < 1.0: camera_distance = 1.0
+            if camera_distance > 20.0: camera_distance = 20.0
+        elif mouse_buttons[1]:
+            camera_x -= change_x / 150.0
+            camera_y -= change_y / 150.0
+        elif mouse_buttons[2]:
+            camera_pitch -= change_y / 150.0
+
+        mouse_x, mouse_y = current_mouse_x, current_mouse_y
 
     surface.fill((0, 0, 0))
 
@@ -145,7 +176,7 @@ while running:
     angle_y += 0.01
     elapsed_time += dt
 
-    print(current_distance)
+    # print(current_distance)
 
     pygame.display.flip()
     clock.tick(90)
