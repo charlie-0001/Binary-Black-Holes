@@ -1,156 +1,202 @@
+from equations import BlackHoleData
 import pygame
 import numpy
-import equations
+import sys
 from pathlib import Path
 
-SCREEN_WIDTH, SCREEN_HEIGHT = 800, 800
-FOV_VERTICAL = numpy.pi / 4
-FOV_HORIZONTAL = FOV_VERTICAL * SCREEN_WIDTH / SCREEN_HEIGHT
+pygame.init()
+pygame.display.set_caption("3D Binary Black Hole Merger")
+window = pygame.display.set_mode((1000, 1000))
+clock = pygame.time.Clock()
 
-simulation = equations.BlackHoleData()
-initial_distance = simulation.calculate_separation_over_time(0)
-t = 0
+SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 1000
+surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+game_font = pygame.font.Font(None, 30)
+
+FOV = 400
+camera_distance = 4.0
+camera_pitch = 0.0
+camera_x = 0.0
+camera_y = 0.0
+mouse_x, mouse_y = pygame.mouse.get_pos()
+
+def get_rotation_matrix(ax, ay, az):
+    rx = numpy.array([
+        [1, 0, 0],
+        [0, numpy.cos(ax), -numpy.sin(ax)],
+        [0, numpy.sin(ax), numpy.cos(ax)]
+    ])
+    ry = numpy.array([
+        [numpy.cos(ay), 0, numpy.sin(ay)],
+        [0, 1, 0],
+        [-numpy.sin(ay), 0, numpy.cos(ay)]
+    ])
+    rz = numpy.array([
+        [numpy.cos(az), -numpy.sin(az), 0],
+        [numpy.sin(az), numpy.cos(az), 0],
+        [0, 0, 1]
+    ])
+    return ry @ rx @ rz
+
+
+def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, orbital_radius_z, phase):
+    projected_points = {}
+
+    # X and Z create a horizontal flat orbit in 3D space
+    orbit_x = numpy.cos(phase) * orbital_radius_x
+    orbit_y = numpy.sin(phase) * orbital_radius_y
+    orbit_z = numpy.sin(phase) * orbital_radius_z
+
+    rot_matrix = get_rotation_matrix(x, y, z)
+
+    cos_pitch = numpy.cos(camera_pitch)
+    sin_pitch = numpy.sin(camera_pitch)
+
+    for i, vertex in enumerate(vertices):
+        rotated = numpy.dot(rot_matrix, vertex)
+
+        world_x = rotated[0] + orbit_x
+        world_y = rotated[1] + orbit_y
+        world_z = rotated[2] + orbit_z
+
+        pitched_x = world_x
+        pitched_y = world_y * cos_pitch - world_z * sin_pitch
+        pitched_z = world_y * sin_pitch + world_z * cos_pitch
+
+        z_depth = pitched_z + camera_distance
+        if z_depth <= 0.1: z_depth = 0.1
+
+        x_proj = int(((pitched_x - camera_x) * FOV) / z_depth) + SCREEN_WIDTH // 2
+        y_proj = int(((pitched_y - camera_y) * FOV) / z_depth) + SCREEN_HEIGHT // 2
+
+        projected_points[i] = (x_proj, y_proj)
+        pygame.draw.circle(surface, (255, 255, 255), (x_proj, y_proj), 4)
+
+    for face in edges:
+        p1 = projected_points[face[0]]
+        p2 = projected_points[face[1]]
+        p3 = projected_points[face[2]]
+        pygame.draw.polygon(surface, (255, 255, 255), [p1, p3, p2], 3)
+
+
+def read_object(path):
+    vertices = []
+    edges = []
+    with open(path) as file:
+        for line in file:
+            parsed = line.split()
+            if not parsed: continue
+            if parsed[0] == "v":
+                vertices.append([float(parsed[1]), float(parsed[2]), float(parsed[3])])
+            elif parsed[0] == "f":
+                ids = []
+                for string in parsed[1:]:
+                    vertex_index = string.split('/')[0]
+                    new_id = int(vertex_index) - 1
+                    ids.append(new_id)
+                if len(ids) == 3: edges.append(ids)
+                if len(ids) == 4:
+                    edges.append([ids[0], ids[1], ids[2]])
+                    edges.append([ids[0], ids[2], ids[3]])
+    return numpy.array(vertices, float), numpy.array(edges, int)
+
+
+vertices, edges = read_object(Path(__file__).parent / "meshes" / "icosphere.obj")
+cube_vertices, cube_edges = read_object(Path(__file__).parent / "meshes" / "cube.obj")
+
+simulation = BlackHoleData()
+
+# map the massive starting distance down to a visual radius of 3.0 on screen
+initial_radius_actual = simulation.initial_distance / 2
+VISUAL_SCALE = 3.0 / initial_radius_actual
+
+angle_x, angle_y, angle_z = 0, 0, 0
+elapsed_time = 0.0
 orbital_phase = 0.0
 
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    surface = pygame.surface.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    clock = pygame.time.Clock()
-    running = True
+# small dt to ensure math doesnt blow up
+# while updating 90 times a second
+dt = 0.0001
 
-    base_directory = Path(__file__).resolve().parent
-    mesh_path = base_directory / "meshes" / "cube.obj"
-    points, triangles = read_obj(mesh_path)
-    camera = numpy.asarray([0, 0, -20, 0, 0]) # the 4th and 5th entry are horizontal and vertical rotation
-    rotation_angle = 0.0
-    orbital_angle = 0.0
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
 
-    while running:
-        surface.fill([0, 0, 0])
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+        current_mouse_x, current_mouse_y = pygame.mouse.get_pos()
+        mouse_buttons = pygame.mouse.get_pressed()
 
-        rotation_angle += 0.01
-        # orbital_angle += 0.01
+        change_x = current_mouse_x - mouse_x
+        change_y = current_mouse_y - mouse_y
 
-        rotated_points = rotate_vertices_y(points, rotation_angle, orbital_angle)
-        project_points(rotated_points, camera)
+        if mouse_buttons[0]:
+            camera_distance += change_y / 50.0
+            if camera_distance < 1.0: camera_distance = 1.0
+            if camera_distance > 20.0: camera_distance = 20.0
+        elif mouse_buttons[1]:
+            camera_x -= change_x / 150.0
+            camera_y -= change_y / 150.0
+        elif mouse_buttons[2]:
+            camera_pitch -= change_y / 150.0
 
-        for index in range(len(triangles)):
-            triangle = [rotated_points[triangles[index][0]][3:], rotated_points[triangles[index][1]][3:], rotated_points[triangles[index][2]][3:]]
-            color = (255, 255 ,255)
-            pygame.draw.polygon(surface, color, triangle)
+        mouse_x, mouse_y = current_mouse_x, current_mouse_y
 
-        screen.blit(surface, (0, 0))
-        pygame.display.update()
-        # camera = camera + numpy.asarray([0, 0, 0, 0, 0])
-        clock.tick(120)
+    surface.fill((0, 0, 0))
 
-def project_points(points, camera):
-    """
-    camera = [x, y, z, yaw, pitch]
-    yaw   = horizontal rotation (radians)
-    pitch = vertical rotation (radians)
-    """
+    current_distance = simulation.calculate_separation_over_time(elapsed_time)
 
-    aspect = SCREEN_WIDTH / SCREEN_HEIGHT
-    f = 1 / numpy.tan(FOV_VERTICAL / 2)
+    if current_distance <= 0:
+        print(f"t={elapsed_time:.4f}s: Black holes have merged!")
+        running = False
+        continue
 
-    cos_yaw = numpy.cos(-camera[3])
-    sin_yaw = numpy.sin(-camera[3])
+    omega_current = numpy.sqrt(
+        (simulation.gravitational_constant * (simulation.bh1_mass + simulation.bh2_mass))
+        / (current_distance ** 3)
+    )
 
-    cos_pitch = numpy.cos(-camera[4])
-    sin_pitch = numpy.sin(-camera[4])
+    orbital_phase += omega_current * dt
 
-    for point in points:
+    physics_radius = current_distance / 2
+    visual_radius = physics_radius * VISUAL_SCALE
 
-        # translate into camera space
-        x = point[0] - camera[0]
-        y = point[1] - camera[1]
-        z = point[2] - camera[2]
+    spin_object(
+        vertices, edges,
+        angle_x, angle_y, angle_z,
+        visual_radius, visual_radius, 0,
+        orbital_phase
+    )
 
-        # rotate around Y (yaw)
-        x2 = x * cos_yaw - z * sin_yaw
-        z2 = x * sin_yaw + z * cos_yaw
+    spin_object(
+        vertices, edges,
+        angle_x, angle_y, angle_z,
+        visual_radius, visual_radius, 0,
+        orbital_phase + numpy.pi  # add 180 degrees so it's on the other side
+    )
 
-        # rotate around X (pitch)
-        y2 = y * cos_pitch - z2 * sin_pitch
-        z3 = y * sin_pitch + z2 * cos_pitch
+    spin_object(
+        cube_vertices, cube_edges,
+        0, 0, 0,
+        0, 0, 0,
+        orbital_phase
+    )
 
-        # behind camera?
-        if z3 <= 0.01:
-            point[3] = -10000
-            point[4] = -10000
-            continue
+    angle_x += 0.01
+    angle_y += 0.01
+    elapsed_time += dt
 
-        # perspective divide
-        ndc_x = (x2 * f / aspect) / z3
-        ndc_y = (y2 * f) / z3
-
-        point[3] = (ndc_x + 1) * SCREEN_WIDTH / 2
-        point[4] = (1 - ndc_y) * SCREEN_HEIGHT / 2
+    elapsed_time_text = game_font.render(f"Time elapsed: {elapsed_time:.4f}s", True, (255, 255, 255))
+    current_distance_text = game_font.render(f"Current distance: {int(current_distance)}m", True, (255, 255, 255))
+    orbital_phase_text = game_font.render(f"Orbital phase: {orbital_phase:.4f} radians", True, (255, 255, 255))
 
 
-def rotate_vertices_y(points, spin_angle, orbit_angle):
-    rotated_points = points.copy()
+    surface.blit(current_distance_text, (0, 0))
+    surface.blit(elapsed_time_text, (0, 30))
+    surface.blit(orbital_phase_text, (0, 60))
 
-    center_x = numpy.mean(points[:, 0])
-    center_z = numpy.mean(points[:, 2])
 
-    cos_s, sin_s = numpy.cos(spin_angle), numpy.sin(spin_angle)
-    cos_o, sin_o = numpy.cos(orbit_angle), numpy.sin(orbit_angle)
+    # print(current_distance)
 
-    orbit_radius = 0  # distance from the rotation center
-
-    for point in rotated_points:
-        # spin the vertex around the cube's own local center
-        x_local = point[0] - center_x
-        z_local = point[2] - center_z
-
-        spun_x = x_local * cos_s - z_local * sin_s
-        spun_z = x_local * sin_s + z_local * cos_s
-
-        # push the spun cube out to its orbital radius
-        x_orbit = spun_x + orbit_radius
-        z_orbit = spun_z
-
-        # rotate that entire orbital position around the world origin (0, 0)
-        new_x = x_orbit * cos_o - z_orbit * sin_o
-        new_z = x_orbit * sin_o + z_orbit * cos_o
-
-        point[0] = new_x
-        point[2] = new_z
-
-    return rotated_points
-
-def read_obj(file_name):
-    vertices = []
-    triangles = []
-
-    with open(file_name, "r") as f:
-        for line in f:
-            parts = line.split()
-            if not parts:
-                continue
-
-            if parts[0] == "v":
-                vertex = [float(parts[1]), float(parts[2]), float(parts[3]), 1, 1]
-                vertices.append(vertex)
-
-            elif parts[0] == "f":
-                v1 = int(parts[1].split('/')[0]) - 1
-                v2 = int(parts[2].split('/')[0]) - 1
-                v3 = int(parts[3].split('/')[0]) - 1
-                triangles.append([v1, v2, v3])
-
-                if len(parts) > 4:
-                    v4 = int(parts[4].split('/')[0]) - 1
-                    triangles.append([v1, v3, v4])
-
-    return numpy.asarray(vertices), numpy.asarray(triangles)
-
-if __name__ == '__main__':
-    main()
-    pygame.quit()
+    pygame.display.flip()
+    clock.tick(90)
