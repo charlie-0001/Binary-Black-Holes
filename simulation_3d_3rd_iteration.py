@@ -1,6 +1,7 @@
 from equations import BlackHoleData
 import pygame
 import numpy
+import sys
 from pathlib import Path
 
 pygame.init()
@@ -10,6 +11,7 @@ clock = pygame.time.Clock()
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 1000
 surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+game_font = pygame.font.Font(None, 30)
 
 FOV = 400
 camera_distance = 4.0
@@ -59,7 +61,7 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
 
         pitched_x = world_x
         pitched_y = world_y * cos_pitch - world_z * sin_pitch
-        pitched_z = world_z * sin_pitch + world_z * cos_pitch
+        pitched_z = world_y * sin_pitch + world_z * cos_pitch
 
         z_depth = pitched_z + camera_distance
         if z_depth <= 0.1: z_depth = 0.1
@@ -100,6 +102,7 @@ def read_object(path):
 
 
 vertices, edges = read_object(Path(__file__).parent / "meshes" / "icosphere.obj")
+cube_vertices, cube_edges = read_object(Path(__file__).parent / "meshes" / "cube.obj")
 
 simulation = BlackHoleData()
 
@@ -172,9 +175,26 @@ while running:
         orbital_phase + numpy.pi  # add 180 degrees so it's on the other side
     )
 
+    spin_object(
+        cube_vertices, cube_edges,
+        0, 0, 0,
+        0, 0, 0,
+        orbital_phase
+    )
+
     angle_x += 0.01
     angle_y += 0.01
     elapsed_time += dt
+
+    elapsed_time_text = game_font.render(f"Time elapsed: {elapsed_time:.4f}s", True, (255, 255, 255))
+    current_distance_text = game_font.render(f"Current distance: {int(current_distance)}m", True, (255, 255, 255))
+    orbital_phase_text = game_font.render(f"Orbital phase: {orbital_phase:.4f} radians", True, (255, 255, 255))
+
+
+    surface.blit(current_distance_text, (0, 0))
+    surface.blit(elapsed_time_text, (0, 30))
+    surface.blit(orbital_phase_text, (0, 60))
+
 
     # print(current_distance)
 
