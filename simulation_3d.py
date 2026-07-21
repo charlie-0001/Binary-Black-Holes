@@ -39,10 +39,15 @@ def get_rotation_matrix(ax, ay, az):
     return ry @ rx @ rz
 
 
-def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, orbital_radius_z, phase):
+LIGHT_DIR = numpy.array([0.577, -0.577, 0.577])
+
+
+def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, orbital_radius_z, phase,
+                base_color=(200, 200, 200)):
+
+    world_points = {}
     projected_points = {}
 
-    # X and Z create a horizontal flat orbit in 3D space
     orbit_x = numpy.cos(phase) * orbital_radius_x
     orbit_y = numpy.sin(phase) * orbital_radius_y
     orbit_z = numpy.sin(phase) * orbital_radius_z
@@ -63,6 +68,8 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
         pitched_y = world_y * cos_pitch - world_z * sin_pitch
         pitched_z = world_y * sin_pitch + world_z * cos_pitch
 
+        world_points[i] = numpy.array([pitched_x, pitched_y, pitched_z])
+
         z_depth = pitched_z + camera_distance
         if z_depth <= 0.1: z_depth = 0.1
 
@@ -70,13 +77,41 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
         y_proj = int(((pitched_y - camera_y) * FOV) / z_depth) + SCREEN_HEIGHT // 2
 
         projected_points[i] = (x_proj, y_proj)
-        pygame.draw.circle(surface, (255, 255, 255), (x_proj, y_proj), 4)
 
+    sorted_faces = []
     for face in edges:
+        p1_w, p2_w, p3_w = world_points[face[0]], world_points[face[1]], world_points[face[2]]
+        avg_z = (p1_w[2] + p2_w[2] + p3_w[2]) / 3.0
+        sorted_faces.append((avg_z, face))
+
+    sorted_faces.sort(key=lambda item: item[0], reverse=True)
+
+    for _, face in sorted_faces:
+        p1_w, p2_w, p3_w = world_points[face[0]], world_points[face[1]], world_points[face[2]]
+
+        v1 = p2_w - p1_w
+        v2 = p3_w - p1_w
+
+        normal = numpy.cross(v1, v2)
+        norm_length = numpy.linalg.norm(normal)
+
+        if norm_length > 0:
+            normal = normal / norm_length
+
+        intensity = numpy.dot(normal, LIGHT_DIR)
+        intensity = max(0.2, min(1.0, intensity + 0.2))
+
+        shaded_color = (
+            int(base_color[0] * intensity),
+            int(base_color[1] * intensity),
+            int(base_color[2] * intensity)
+        )
+
         p1 = projected_points[face[0]]
         p2 = projected_points[face[1]]
         p3 = projected_points[face[2]]
-        pygame.draw.polygon(surface, (255, 255, 255), [p1, p3, p2], 3)
+
+        pygame.draw.polygon(surface, shaded_color, [p1, p3, p2])
 
 
 def read_object(path):
@@ -175,12 +210,15 @@ while running:
         orbital_phase + numpy.pi  # add 180 degrees so it's on the other side
     )
 
-    spin_object(
-        cube_vertices, cube_edges,
-        0, 0, 0,
-        0, 0, 0,
-        orbital_phase
-    )
+    # spin_object(
+        # cube_vertices, cube_edges,
+        # 0, 0, 0,
+        #0, 0, 0,
+        #orbital_phase
+    #)
+
+    h_cross = simulation.waveform_over_time_cross(elapsed_time, orbital_phase)
+    h_plus = simulation.waveform_over_time_plus(elapsed_time, orbital_phase)
 
     angle_x += 0.01
     angle_y += 0.01
@@ -189,11 +227,19 @@ while running:
     elapsed_time_text = game_font.render(f"Time elapsed: {elapsed_time:.4f}s", True, (255, 255, 255))
     current_distance_text = game_font.render(f"Current distance: {int(current_distance)}m", True, (255, 255, 255))
     orbital_phase_text = game_font.render(f"Orbital phase: {orbital_phase:.4f} radians", True, (255, 255, 255))
+    h_cross_text = game_font.render(f"Orbital phase: {h_cross:.100f} radians", True, (255, 255, 255))
+    h_plus_text = game_font.render(f"Orbital phase: {h_plus:.100f} radians", True, (255, 255, 255))
+
+
 
 
     surface.blit(current_distance_text, (0, 0))
     surface.blit(elapsed_time_text, (0, 30))
     surface.blit(orbital_phase_text, (0, 60))
+    surface.blit(h_cross_text, (0, 90))
+    surface.blit(h_plus_text, (0, 120))
+
+
 
 
     # print(current_distance)
