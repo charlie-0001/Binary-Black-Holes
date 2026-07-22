@@ -213,9 +213,9 @@ while running:
     # spin_object(
         # cube_vertices, cube_edges,
         # 0, 0, 0,
-        #0, 0, 0,
-        #orbital_phase
-    #)
+        # 0, 0, 0,
+        # orbital_phase
+    # )
 
     h_cross = simulation.waveform_over_time_cross(elapsed_time, orbital_phase)
     h_plus = simulation.waveform_over_time_plus(elapsed_time, orbital_phase)
@@ -227,10 +227,8 @@ while running:
     elapsed_time_text = game_font.render(f"Time elapsed: {elapsed_time:.4f}s", True, (255, 255, 255))
     current_distance_text = game_font.render(f"Current distance: {int(current_distance)}m", True, (255, 255, 255))
     orbital_phase_text = game_font.render(f"Orbital phase: {orbital_phase:.4f} radians", True, (255, 255, 255))
-    h_cross_text = game_font.render(f"Orbital phase: {h_cross:.100f} radians", True, (255, 255, 255))
-    h_plus_text = game_font.render(f"Orbital phase: {h_plus:.100f} radians", True, (255, 255, 255))
-
-
+    h_cross_text = game_font.render(f"H cross: {h_cross:e} radians", True, (255, 255, 255))
+    h_plus_text = game_font.render(f"H plus: {h_plus:e} radians", True, (255, 255, 255))
 
 
     surface.blit(current_distance_text, (0, 0))
@@ -238,8 +236,6 @@ while running:
     surface.blit(orbital_phase_text, (0, 60))
     surface.blit(h_cross_text, (0, 90))
     surface.blit(h_plus_text, (0, 120))
-
-
 
 
     # print(current_distance)
