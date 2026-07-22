@@ -1,12 +1,11 @@
 from equations import BlackHoleData
+from side_panel import SidePanel
 import pygame
 import numpy
-import sys
 from pathlib import Path
 
 pygame.init()
 pygame.display.set_caption("3D Binary Black Hole Merger")
-window = pygame.display.set_mode((1000, 1000))
 clock = pygame.time.Clock()
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 1000
@@ -140,6 +139,7 @@ vertices, edges = read_object(Path(__file__).parent / "meshes" / "icosphere.obj"
 cube_vertices, cube_edges = read_object(Path(__file__).parent / "meshes" / "cube.obj")
 
 simulation = BlackHoleData()
+side_panel = SidePanel(simulation, clock, 350, 500, surface)
 
 # map the massive starting distance down to a visual radius of 3.0 on screen
 initial_radius_actual = simulation.initial_distance / 2
@@ -220,25 +220,18 @@ while running:
     h_cross = simulation.waveform_over_time_cross(elapsed_time, orbital_phase)
     h_plus = simulation.waveform_over_time_plus(elapsed_time, orbital_phase)
 
+    # update side panel properties
+    side_panel.h_plus = h_plus
+    side_panel.h_cross = h_cross
+    side_panel.current_distance = current_distance
+    side_panel.elapsed_time = elapsed_time
+    side_panel.orbital_phase = orbital_phase
+
+    side_panel.update()
+
     angle_x += 0.01
     angle_y += 0.01
     elapsed_time += dt
-
-    elapsed_time_text = game_font.render(f"Time elapsed: {elapsed_time:.4f}s", True, (255, 255, 255))
-    current_distance_text = game_font.render(f"Current distance: {int(current_distance)}m", True, (255, 255, 255))
-    orbital_phase_text = game_font.render(f"Orbital phase: {orbital_phase:.4f} radians", True, (255, 255, 255))
-    h_cross_text = game_font.render(f"H cross: {h_cross:e} radians", True, (255, 255, 255))
-    h_plus_text = game_font.render(f"H plus: {h_plus:e} radians", True, (255, 255, 255))
-
-
-    surface.blit(current_distance_text, (0, 0))
-    surface.blit(elapsed_time_text, (0, 30))
-    surface.blit(orbital_phase_text, (0, 60))
-    surface.blit(h_cross_text, (0, 90))
-    surface.blit(h_plus_text, (0, 120))
-
-
-    # print(current_distance)
 
     pygame.display.flip()
     clock.tick(90)
