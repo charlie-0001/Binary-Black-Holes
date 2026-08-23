@@ -10,9 +10,10 @@ clock = pygame.time.Clock()
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 1350, 1000
 surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+ring_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
 game_font = pygame.font.Font(None, 30)
 
-my_image = pygame.image.load("images/cosmos.png").convert_alpha()
+my_image = pygame.image.load("images/cosmos.png").convert()
 
 PANEL_OFFSET = SCREEN_WIDTH - 1000
 FOV = 400
@@ -21,6 +22,9 @@ camera_pitch = 0.0
 camera_x = 0.0
 camera_y = 0.0
 mouse_x, mouse_y = pygame.mouse.get_pos()
+
+LIGHT_DIR = numpy.array([0.577, -0.577, 0.577]) * 3
+
 
 def get_rotation_matrix(ax, ay, az):
     rx = numpy.array([
@@ -41,23 +45,18 @@ def get_rotation_matrix(ax, ay, az):
     return ry @ rx @ rz
 
 
-LIGHT_DIR = numpy.array([0.577, -0.577, 0.577])
-
-
-def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, orbital_radius_z, phase,
-                alpha = 0):
-
-    world_points = {}
-    projected_points = {}
-
+def transform_and_collect_faces(all_faces, vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, orbital_radius_z, phase, alpha = 0):
+    """transforms vertices and pushes processed faces to a render list."""
     orbit_x = numpy.cos(phase) * orbital_radius_x
     orbit_y = numpy.sin(phase) * orbital_radius_y
     orbit_z = numpy.sin(phase) * orbital_radius_z
 
     rot_matrix = get_rotation_matrix(x, y, z)
-
     cos_pitch = numpy.cos(camera_pitch)
     sin_pitch = numpy.sin(camera_pitch)
+
+    world_points = {}
+    projected_points = {}
 
     for i, vertex in enumerate(vertices):
         rotated = numpy.dot(rot_matrix, vertex)
@@ -80,21 +79,21 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
 
         projected_points[i] = (x_proj, y_proj)
 
-    sorted_faces = []
     for face, face_color in edges:
         p1_w, p2_w, p3_w = world_points[face[0]], world_points[face[1]], world_points[face[2]]
         avg_z = (p1_w[2] + p2_w[2] + p3_w[2]) / 3.0
-        sorted_faces.append((avg_z, face, face_color))
 
-    sorted_faces.sort(key=lambda item: item[0], reverse=True)
-    mesh_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        p1 = projected_points[face[0]]
+        p2 = projected_points[face[1]]
+        p3 = projected_points[face[2]]
 
-    for _, face, face_color in sorted_faces:
-        p1_w, p2_w, p3_w = world_points[face[0]], world_points[face[1]], world_points[face[2]]
+        # skip faces outside the screen bounding box
+        if (max(p1[0], p2[0], p3[0]) < 0 or min(p1[0], p2[0], p3[0]) > SCREEN_WIDTH or
+                max(p1[1], p2[1], p3[1]) < 0 or min(p1[1], p2[1], p3[1]) > SCREEN_HEIGHT):
+            continue
 
         v1 = p2_w - p1_w
         v2 = p3_w - p1_w
-
         normal = numpy.cross(v1, v2)
         norm_length = numpy.linalg.norm(normal)
 
@@ -104,20 +103,46 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
         intensity = numpy.dot(normal, LIGHT_DIR)
         intensity = max(0.2, min(1.0, intensity + 0.2))
 
-        shaded_color = \
-            (
-                int(face_color[0] * intensity),
-                int(face_color[1] * intensity),
-                int(face_color[2] * intensity),
-                alpha
-            )
+        shaded_color = (
+            int(face_color[0] * intensity),
+            int(face_color[1] * intensity),
+            int(face_color[2] * intensity),
+            alpha
+        )
 
-        p1 = projected_points[face[0]]
-        p2 = projected_points[face[1]]
-        p3 = projected_points[face[2]]
+        all_faces.append((avg_z, p1, p2, p3, shaded_color, alpha))
 
-        pygame.draw.polygon(mesh_surface, shaded_color, [p1, p3, p2])
-    surface.blit(mesh_surface, (0, 0))
+
+def render_scene(black_hole_faces, ring_faces):
+    # render background
+    surface.fill((0, 0, 0))
+    surface.blit(my_image, (0, 0))
+
+    # render black holes first
+    black_hole_faces.sort(key=lambda item: item[0], reverse=True)
+
+    for _, p1, p2, p3, shaded_color, alpha in black_hole_faces:
+        pygame.draw.polygon(
+            surface,
+            (shaded_color[0], shaded_color[1], shaded_color[2]),
+            [p1, p3, p2]
+        )
+
+    # clear ring surface
+    ring_surface.fill((0, 0, 0, 0))
+
+    # render rings on transparent surface
+    ring_faces.sort(key=lambda item: item[0], reverse=True)
+
+    for _, p1, p2, p3, shaded_color, alpha in ring_faces:
+        pygame.draw.polygon(
+            ring_surface,
+            shaded_color,
+            [p1, p3, p2]
+        )
+
+    # put transparent rings above black holes
+    surface.blit(ring_surface, (0, 0))
 
 
 def read_object(obj, mtl):
@@ -126,19 +151,18 @@ def read_object(obj, mtl):
     materials = {}
     current_color = (200, 200, 200)
 
-    if Path(mtl).exists():
-        current_mtl = None
-        with open(mtl) as file:
-            for line in file:
-                parsed = line.split()
-                if not parsed: continue
-                if parsed[0] == "newmtl":
-                    current_mtl = parsed[1]
-                elif parsed[0] == "Kd" and current_mtl:
-                    r = int(float(parsed[1]) * 255)
-                    g = int(float(parsed[2]) * 255)
-                    b = int(float(parsed[3]) * 255)
-                    materials[current_mtl] = (r, g, b)
+    current_mtl = None
+    with open(mtl) as file:
+        for line in file:
+            parsed = line.split()
+            if not parsed: continue
+            if parsed[0] == "newmtl":
+                current_mtl = parsed[1]
+            elif parsed[0] == "Kd" and current_mtl:
+                r = int(float(parsed[1]) * 255)
+                g = int(float(parsed[2]) * 255)
+                b = int(float(parsed[3]) * 255)
+                materials[current_mtl] = (r, g, b)
 
     with open(obj) as file:
         for line in file:
@@ -174,16 +198,12 @@ ring_vertices, ring_edges = read_object(Path(__file__).parent / "meshes" / "ring
 simulation = BlackHoleData()
 side_panel = SidePanel(simulation, clock, 350, 500, surface)
 
-# map the massive starting distance down to a visual radius of 3.0 on screen
-initial_radius_actual = simulation.initial_distance / 2
-VISUAL_SCALE = 3.0 / initial_radius_actual
+VISUAL_SCALE = 3.0 / (simulation.initial_distance / 2)
 
 angle_x, angle_y, angle_z = 0, 0, 0
 elapsed_time = 0.0
 orbital_phase = 0.0
 
-# small dt to ensure math doesnt blow up
-# while updating 90 times a second
 dt = 0.0001
 
 running = True
@@ -210,8 +230,6 @@ while running:
 
         mouse_x, mouse_y = current_mouse_x, current_mouse_y
 
-    surface.fill((0, 0, 0))
-    surface.blit(my_image, (0, 0))
     current_distance = simulation.calculate_separation_over_time(elapsed_time)
 
     if current_distance <= 0:
@@ -229,48 +247,46 @@ while running:
     physics_radius = current_distance / 2
     visual_radius = physics_radius * VISUAL_SCALE
 
-    spin_object(
-        vertices, edges,
-        angle_x, angle_y, angle_z,
-        visual_radius, visual_radius, 0,
-        orbital_phase, 255
-    )
+    # collect faces separately so rings can always be rendered above black holes
+    black_hole_faces = []
+    ring_faces = []
 
-    spin_object(
-        vertices, edges,
+    transform_and_collect_faces(
+        black_hole_faces, vertices, edges,
         angle_x, angle_y, angle_z,
         visual_radius, visual_radius, 0,
-        orbital_phase + numpy.pi,  # add 180 degrees so it's on the other side
+        orbital_phase,
         255
     )
 
-    spin_object(
-        ring_vertices, ring_edges,
+    transform_and_collect_faces(
+        black_hole_faces, vertices, edges,
         angle_x, angle_y, angle_z,
         visual_radius, visual_radius, 0,
-        orbital_phase, 50
+        orbital_phase + numpy.pi,
+        255
     )
 
-    spin_object(
-        ring_vertices, ring_edges,
+    transform_and_collect_faces(
+        ring_faces, ring_vertices, ring_edges,
         angle_x, angle_y, angle_z,
         visual_radius, visual_radius, 0,
-        orbital_phase + numpy.pi,  # add 180 degrees so it's on the other side
+        orbital_phase,
         50
     )
 
-    # spin_object(
-        # cube_vertices, cube_edges,
-        # 0, 0, 0,
-        # 0, 0, 0,
-        # orbital_phase
-    # )
+    transform_and_collect_faces(
+        ring_faces, ring_vertices, ring_edges,
+        angle_x, angle_y, angle_z,
+        visual_radius, visual_radius, 0,
+        orbital_phase + numpy.pi,
+        50
+    )
 
     h_cross = simulation.waveform_over_time_cross(elapsed_time, orbital_phase)
     h_plus = simulation.waveform_over_time_plus(elapsed_time, orbital_phase)
     v_newton, v_rel, v_diff = simulation.calculate_velocity_difference(current_distance)
 
-    # update side panel properties
     side_panel.h_plus = h_plus
     side_panel.h_cross = h_cross
     side_panel.current_distance = current_distance
@@ -280,6 +296,7 @@ while running:
     side_panel.relativistic_velocity = v_rel
     side_panel.difference = v_diff
 
+    render_scene(black_hole_faces, ring_faces)
     side_panel.update()
 
     angle_x += 0.01
