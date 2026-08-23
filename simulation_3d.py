@@ -45,7 +45,7 @@ LIGHT_DIR = numpy.array([0.577, -0.577, 0.577])
 
 
 def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, orbital_radius_z, phase,
-                base_color=(200, 200, 200)):
+                alpha = 0):
 
     world_points = {}
     projected_points = {}
@@ -87,6 +87,7 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
         sorted_faces.append((avg_z, face, face_color))
 
     sorted_faces.sort(key=lambda item: item[0], reverse=True)
+    mesh_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
 
     for _, face, face_color in sorted_faces:
         p1_w, p2_w, p3_w = world_points[face[0]], world_points[face[1]], world_points[face[2]]
@@ -107,14 +108,16 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
             (
                 int(face_color[0] * intensity),
                 int(face_color[1] * intensity),
-                int(face_color[2] * intensity)
+                int(face_color[2] * intensity),
+                alpha
             )
 
         p1 = projected_points[face[0]]
         p2 = projected_points[face[1]]
         p3 = projected_points[face[2]]
 
-        pygame.draw.polygon(surface, shaded_color, [p1, p3, p2])
+        pygame.draw.polygon(mesh_surface, shaded_color, [p1, p3, p2])
+    surface.blit(mesh_surface, (0, 0))
 
 
 def read_object(obj, mtl):
@@ -165,8 +168,8 @@ def read_object(obj, mtl):
     return numpy.array(vertices, float), edges
 
 
-vertices, edges = read_object(Path(__file__).parent / "meshes" / "icosphere.obj", Path(__file__).parent / "meshes" / "icosphere.mtl")
-cube_vertices, cube_edges = read_object(Path(__file__).parent / "meshes" / "cube.obj", Path(__file__).parent / "meshes" / "cube.mtl")
+vertices, edges = read_object(Path(__file__).parent / "meshes" / "black_hole.obj", Path(__file__).parent / "meshes" / "black_hole.mtl")
+ring_vertices, ring_edges = read_object(Path(__file__).parent / "meshes" / "ring.obj", Path(__file__).parent / "meshes" / "ring.mtl")
 
 simulation = BlackHoleData()
 side_panel = SidePanel(simulation, clock, 350, 500, surface)
@@ -230,7 +233,7 @@ while running:
         vertices, edges,
         angle_x, angle_y, angle_z,
         visual_radius, visual_radius, 0,
-        orbital_phase,
+        orbital_phase, 255
     )
 
     spin_object(
@@ -238,6 +241,22 @@ while running:
         angle_x, angle_y, angle_z,
         visual_radius, visual_radius, 0,
         orbital_phase + numpy.pi,  # add 180 degrees so it's on the other side
+        255
+    )
+
+    spin_object(
+        ring_vertices, ring_edges,
+        angle_x, angle_y, angle_z,
+        visual_radius, visual_radius, 0,
+        orbital_phase, 50
+    )
+
+    spin_object(
+        ring_vertices, ring_edges,
+        angle_x, angle_y, angle_z,
+        visual_radius, visual_radius, 0,
+        orbital_phase + numpy.pi,  # add 180 degrees so it's on the other side
+        50
     )
 
     # spin_object(
