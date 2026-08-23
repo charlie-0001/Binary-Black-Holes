@@ -81,14 +81,14 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
         projected_points[i] = (x_proj, y_proj)
 
     sorted_faces = []
-    for face in edges:
+    for face, face_color in edges:
         p1_w, p2_w, p3_w = world_points[face[0]], world_points[face[1]], world_points[face[2]]
         avg_z = (p1_w[2] + p2_w[2] + p3_w[2]) / 3.0
-        sorted_faces.append((avg_z, face))
+        sorted_faces.append((avg_z, face, face_color))
 
     sorted_faces.sort(key=lambda item: item[0], reverse=True)
 
-    for _, face in sorted_faces:
+    for _, face, face_color in sorted_faces:
         p1_w, p2_w, p3_w = world_points[face[0]], world_points[face[1]], world_points[face[2]]
 
         v1 = p2_w - p1_w
@@ -103,11 +103,12 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
         intensity = numpy.dot(normal, LIGHT_DIR)
         intensity = max(0.2, min(1.0, intensity + 0.2))
 
-        shaded_color = (
-            int(base_color[0] * intensity),
-            int(base_color[1] * intensity),
-            int(base_color[2] * intensity)
-        )
+        shaded_color = \
+            (
+                int(face_color[0] * intensity),
+                int(face_color[1] * intensity),
+                int(face_color[2] * intensity)
+            )
 
         p1 = projected_points[face[0]]
         p2 = projected_points[face[1]]
@@ -116,30 +117,56 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
         pygame.draw.polygon(surface, shaded_color, [p1, p3, p2])
 
 
-def read_object(path):
+def read_object(obj, mtl):
     vertices = []
     edges = []
-    with open(path) as file:
+    materials = {}
+    current_color = (200, 200, 200)
+
+    if Path(mtl).exists():
+        current_mtl = None
+        with open(mtl) as file:
+            for line in file:
+                parsed = line.split()
+                if not parsed: continue
+                if parsed[0] == "newmtl":
+                    current_mtl = parsed[1]
+                elif parsed[0] == "Kd" and current_mtl:
+                    r = int(float(parsed[1]) * 255)
+                    g = int(float(parsed[2]) * 255)
+                    b = int(float(parsed[3]) * 255)
+                    materials[current_mtl] = (r, g, b)
+
+    with open(obj) as file:
         for line in file:
             parsed = line.split()
             if not parsed: continue
-            if parsed[0] == "v":
+
+            if parsed[0] == "usemtl":
+                mtl_name = parsed[1]
+                current_color = materials.get(mtl_name, (200, 200, 200))
+
+            elif parsed[0] == "v":
                 vertices.append([float(parsed[1]), float(parsed[2]), float(parsed[3])])
+
             elif parsed[0] == "f":
                 ids = []
                 for string in parsed[1:]:
                     vertex_index = string.split('/')[0]
                     new_id = int(vertex_index) - 1
                     ids.append(new_id)
-                if len(ids) == 3: edges.append(ids)
-                if len(ids) == 4:
-                    edges.append([ids[0], ids[1], ids[2]])
-                    edges.append([ids[0], ids[2], ids[3]])
-    return numpy.array(vertices, float), numpy.array(edges, int)
+
+                if len(ids) == 3:
+                    edges.append((ids, current_color))
+                elif len(ids) == 4:
+                    edges.append(([ids[0], ids[1], ids[2]], current_color))
+                    edges.append(([ids[0], ids[2], ids[3]], current_color))
+
+    return numpy.array(vertices, float), edges
 
 
-vertices, edges = read_object(Path(__file__).parent / "meshes" / "icosphere.obj")
-cube_vertices, cube_edges = read_object(Path(__file__).parent / "meshes" / "cube.obj")
+vertices, edges = read_object(Path(__file__).parent / "meshes" / "icosphere.obj", Path(__file__).parent / "meshes" / "icosphere.mtl")
+cube_vertices, cube_edges = read_object(Path(__file__).parent / "meshes" / "cube.obj", Path(__file__).parent / "meshes" / "cube.mtl")
 
 simulation = BlackHoleData()
 side_panel = SidePanel(simulation, clock, 350, 500, surface)
@@ -203,14 +230,14 @@ while running:
         vertices, edges,
         angle_x, angle_y, angle_z,
         visual_radius, visual_radius, 0,
-        orbital_phase
+        orbital_phase,
     )
 
     spin_object(
         vertices, edges,
         angle_x, angle_y, angle_z,
         visual_radius, visual_radius, 0,
-        orbital_phase + numpy.pi  # add 180 degrees so it's on the other side
+        orbital_phase + numpy.pi,  # add 180 degrees so it's on the other side
     )
 
     # spin_object(
