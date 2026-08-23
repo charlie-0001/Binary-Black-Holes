@@ -94,6 +94,29 @@ class BlackHoleData:
     def waveform_over_time_cross(self, time, phase):
         return self.strain_amplitude_changes_over_time(time) * numpy.sin(2 * phase)
 
+    def calculate_velocity_difference(self, separation):
+        if separation <= 0:
+            return 0.0, 0.0, 0.0
+
+        total_mass = self.bh1_mass + self.bh2_mass
+
+        # standard newtonian orbital velocity
+        v_newton = 0.5 * numpy.sqrt((self.gravitational_constant * total_mass) / separation)
+
+        # relativistic orbital velocity (schwarzschild effective approximation)
+        schwarzschild_radius = (2 * self.gravitational_constant * total_mass) / (self.speed_of_light ** 2)
+
+        if separation <= schwarzschild_radius:
+            return v_newton, self.speed_of_light, self.speed_of_light - v_newton
+
+        v_rel = 0.5 * numpy.sqrt((self.gravitational_constant * total_mass) / (separation - schwarzschild_radius))
+        v_rel = min(v_rel, self.speed_of_light)
+
+        # calculate difference
+        v_diff = v_rel - v_newton
+
+        return v_newton, v_rel, v_diff
+
 
 # -------------------------------------------------------
 
