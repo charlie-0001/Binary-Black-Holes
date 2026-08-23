@@ -8,10 +8,13 @@ pygame.init()
 pygame.display.set_caption("3D Binary Black Hole Merger")
 clock = pygame.time.Clock()
 
-SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 1000
+SCREEN_WIDTH, SCREEN_HEIGHT = 1350, 1000
 surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 game_font = pygame.font.Font(None, 30)
 
+my_image = pygame.image.load("images/cosmos.png").convert_alpha()
+
+PANEL_OFFSET = SCREEN_WIDTH - 1000
 FOV = 400
 camera_distance = 4.0
 camera_pitch = 0.0
@@ -72,7 +75,7 @@ def spin_object(vertices, edges, x, y, z, orbital_radius_x, orbital_radius_y, or
         z_depth = pitched_z + camera_distance
         if z_depth <= 0.1: z_depth = 0.1
 
-        x_proj = int(((pitched_x - camera_x) * FOV) / z_depth) + SCREEN_WIDTH // 2
+        x_proj = int(((pitched_x - camera_x) * FOV) / z_depth) + SCREEN_WIDTH // 2 + PANEL_OFFSET
         y_proj = int(((pitched_y - camera_y) * FOV) / z_depth) + SCREEN_HEIGHT // 2
 
         projected_points[i] = (x_proj, y_proj)
@@ -178,7 +181,7 @@ while running:
         mouse_x, mouse_y = current_mouse_x, current_mouse_y
 
     surface.fill((0, 0, 0))
-
+    surface.blit(my_image, (0, 0))
     current_distance = simulation.calculate_separation_over_time(elapsed_time)
 
     if current_distance <= 0:
@@ -219,6 +222,7 @@ while running:
 
     h_cross = simulation.waveform_over_time_cross(elapsed_time, orbital_phase)
     h_plus = simulation.waveform_over_time_plus(elapsed_time, orbital_phase)
+    v_newton, v_rel, v_diff = simulation.calculate_velocity_difference(current_distance)
 
     # update side panel properties
     side_panel.h_plus = h_plus
@@ -226,6 +230,9 @@ while running:
     side_panel.current_distance = current_distance
     side_panel.elapsed_time = elapsed_time
     side_panel.orbital_phase = orbital_phase
+    side_panel.newtonian_velocity = v_newton
+    side_panel.relativistic_velocity = v_rel
+    side_panel.difference = v_diff
 
     side_panel.update()
 
