@@ -1,3 +1,5 @@
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 function reposition(newPopup, reference) {
     const rect = reference.getBoundingClientRect();
     
@@ -13,18 +15,24 @@ const hoverContainers = [...document.querySelectorAll('[data-hover-group="roadma
 
 hoverContainers.forEach(container => {
     const popup = document.createElement("div");
-    popup.textContent = `Popup for #${container.id}`;
+    popup.textContent = container.dataset.hoverInfo;
     popup.classList.add("popup-display");
 
     popup.style.position = "absolute";
     popup.style.display = "none";
+    popup.style.opacity = "0";
     popup.style.zIndex = "1000";
 
     document.body.appendChild(popup);
 
-    container.addEventListener('mouseenter', () => {
+    container.addEventListener('mouseenter', async () => {
         reposition(popup, container);
         popup.style.display = 'block';
+        for (let i = 0; i < 100; i++)
+        {
+            popup.style.opacity = i/100;
+            await sleep(0.5);
+        }
     });
 
     container.addEventListener('mouseleave', () => {
