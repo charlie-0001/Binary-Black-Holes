@@ -6,11 +6,20 @@
     box-sizing: border-box;
 }
 
+/* 2 below remove scroll bar */
+body {
+    scrollbar-width: none; 
+}
+
+body::-webkit-scrollbar {
+    display: none;
+}
+
 @font-face 
 {
-    font-family: "trench-font";
-    src: url("fonts/trench-font/TrenchThin-16R0.otf") format("opentype");
-    font-weight: normal;
+    font-family: "Futura";
+    src: url("fonts/Futura-Bold.ttf") format("truetype");
+    font-weight: 900;
     font-style: normal;
     font-display: swap;
 }
@@ -38,7 +47,7 @@
 
 .background-video 
 {
-    position: absolute;
+    position: fixed;
     object-fit: cover;
     overflow: hidden;
     width: 100%;
@@ -49,14 +58,8 @@
 .title 
 {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid #444444;
     font-size: 100px;
-    margin: 20px 70px 5px 70px;
     padding: 0px 20px 0px 20px;
-    background-color: rgba(255, 255, 255, 0.5);
-    border-radius: 20px;
 }
 
 .subtitle
@@ -66,16 +69,28 @@
     align-items: center;
     font-size: 50px;
     width: 90%;
-    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.divider {
+    width: 90%;
+    height: 5px;
+    border: none;
+    background: black;
+}
+
+.divider-transparent-right {
+    background: linear-gradient(to right, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
 }
 
 .main-container 
 {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    font-family: "trench-font", sans-serif;
+    font-family: "Futura", sans-serif;
+    font-weight: 900;
+    margin: 40px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 5px solid black;
 }
 
 .row
@@ -86,16 +101,36 @@
     margin: 0 auto;
 }
 
-.left-container, .right-container {
+.left-row-container, .right-row-container {
     display: flex;
     flex: 1;
     justify-content: center;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.5);
-    margin: 3% 3%;
+    background-color: rgba(255, 255, 255);
+    margin: 20px;
     padding: 10px;
-    border-radius: 20px;
-    border: 1px solid #444444;
+    border: 3px solid black;
+}
+
+.center-container
+{
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
+}
+
+.container-with-background
+{
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 3px solid black;
+    margin: 20px;
+    align-items: center;
 }
 
 .hover-container {
@@ -103,7 +138,7 @@
     padding: 10px;
     width: 50px;
     height: 50px;
-    margin: 5px;
+    margin: 20px;
     border-radius: 50%;
     justify-content: center;
     align-items: center;
@@ -113,10 +148,12 @@
 }
 
 .popup-display {
+    max-width: 300px;
+    white-space: normal;
     margin-top: 15px;
     padding: 12px 16px;
-    background-color: #222222;
-    color: #aaaaaa;
+    background-color: black;
+    color: white;
     border: 1px solid #444444;
     border-radius: 6px;
     transition: color 0.2s ease, border-color 0.2s ease;

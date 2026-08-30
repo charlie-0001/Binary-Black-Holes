@@ -1,14 +1,14 @@
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-function reposition(newPopup, reference) {
+function reposition(popup, reference) 
+{
+    popup.style.display = "block";
     const rect = reference.getBoundingClientRect();
-    
-    const centerX = rect.left + rect.width / 2 + window.scrollX;
-    const bottomY = rect.bottom + window.scrollY + 8;
+    const targetLeft = (rect.left + rect.width / 2) - (popup.offsetWidth / 2);
+    const yOffset = 10
 
-    newPopup.style.left = `${centerX}px`;
-    newPopup.style.top = `${bottomY}px`;
-    newPopup.style.transform = 'translateX(-50%)';
+    popup.style.left = `${targetLeft + window.scrollX}px`;
+    popup.style.top = `${rect.bottom + window.scrollY + yOffset}px`;
 }
 
 const hoverContainers = [...document.querySelectorAll('[data-hover-group="roadmap"]')];
@@ -19,6 +19,8 @@ hoverContainers.forEach(container => {
     popup.classList.add("popup-display");
 
     popup.style.position = "absolute";
+    popup.style.justifyContent = 'center';
+    popup.style.alignItems = 'center';
     popup.style.display = "none";
     popup.style.opacity = "0";
     popup.style.zIndex = "1000";
