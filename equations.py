@@ -52,19 +52,13 @@ class BlackHoleData:
         return numpy.array([-x, -y])
 
     def calculate_separation_over_time(self, time):
-        inner_term = (
-            self.initial_distance ** 4
-            - (256 / 5)
-            * (
-                (
-                    self.gravitational_constant ** 3
-                    * self.bh1_mass
-                    * self.bh2_mass
-                    * (self.bh1_mass + self.bh2_mass)
-                )
-                / self.speed_of_light ** 5
-            )
-            * time
+        inner_term = (self.initial_distance ** 4 - (256 / 5) *
+            (
+                (self.gravitational_constant ** 3
+                * self.bh1_mass
+                * self.bh2_mass
+                * (self.bh1_mass + self.bh2_mass)
+            ) / self.speed_of_light ** 5) * time
         )
 
         if inner_term <= 0:
