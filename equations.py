@@ -7,12 +7,12 @@ class BlackHoleData:
         self.gravitational_constant = 6.674e-11  # m^3 kg^-1 s^-2
         self.speed_of_light = 299792458  # m/s
 
-        self.bh1_mass = 4e30
+        self.bh1_mass = 4e30 #kg
         self.bh2_mass = 4e30
         self.total_mass = self.bh1_mass + self.bh2_mass
 
         # initial conditions
-        self.bh1_position = numpy.array([50000.0, 50000.0])
+        self.bh1_position = numpy.array([50000.0, 50000.0]) #km
         self.bh2_position = numpy.array([-50000.0, -50000.0])
         self.initial_distance = self.distance_between_two_points(
             self.bh1_position, self.bh2_position
