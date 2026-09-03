@@ -96,16 +96,64 @@
                 </div>
 
                 <div class="subtitle">
-                    <p>2D Simulation</p>
+                    <p>Setup, planning, and goal</p>
                 </div>
 
                 <div class="row">
-                    <div class="left-row-container">
-                        <video autoplay muted loop playsinline width="50%" src="videos/2dSim.mp4" type="video/mp4"></video>
+                    <div class="row-container">
+                        <p>
+                            <span class="subsubtitle">Setup</span><br>
+                            To setup the codebase and save version history, we created a github repository and periodically comitted our work there.
+                        </p>
+                    </div>
+                    <div class="row-container">
+                        <p>
+                            <span class="subsubtitle">Planning</span><br>
+                            To plan, a project was created in github and issues would be added there to track progress and clearly show what needed to be worked on.
+                            Each issue would be split into the 5 default categories: backlog, ready, in progress, in review, and done.
+                        </p>
+                    </div>
+                    <div class="row-container">
+                        <p>
+                            <span class="subsubtitle">What is the end goal?</span><br>
+                            The foremost goal of this project is to strengthen our knowledge and curiosity in physics while also using another skill we love,
+                            programming, to accomplish that. Additionally, this project is meant to test our knowledge with linear algebra and programming languages
+                            in ways we haven't done before.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="subtitle">
+                    <p>2D Simulation</p>
+                </div>
+
+                <div class="row" style="align-items: stretch;">
+                    <div class="row-container center-container">
+                        <video autoplay muted loop playsinline width="75%" src="videos/2dSim.mp4" type="video/mp4"></video>
                     </div>
 
-                    <div class="right-row-container">
-                        <p>hello!</p>
+                    <div class="row-container">
+                        <div class="normal-paragraph center-container">
+                            <p>
+                                <span class="subsubtitle">Equations</span><br>
+                                The first step to 2D simulation is figuring out the path the black hole takes. To gather this information, we needed to use
+                                one crucial equation:
+                            </p>
+                                <pre><code>def calculate_separation_over_time(self, time):
+    inner_term = (self.initial_distance ** 4 - (256 / 5) *
+        (
+            (self.gravitational_constant ** 3
+            * self.bh1_mass
+            * self.bh2_mass
+            * (self.bh1_mass + self.bh2_mass)
+        ) / self.speed_of_light ** 5) * time
+    )
+
+    if inner_term <= 0:
+        return 0.0
+
+    return inner_term ** 0.25</code></pre>
+                        </div>
                     </div>
                 </div>
                 
@@ -119,6 +167,10 @@
 
                 <div class="subtitle">
                     <p>Website</p>
+                </div>
+
+                <div class="subtitle">
+                    <p>Evaluation</p>
                 </div>
 
             </div>

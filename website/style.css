@@ -39,6 +39,20 @@ body::-webkit-scrollbar {
     }
 }
 
+pre, code {
+    display: block;
+    visibility: visible;
+    color: #ffffff;
+    background-color: #1e1e1e;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    white-space: pre;
+    overflow-x: auto;
+    width: 100%;
+    margin-top: 5px;
+}
+
 .load-animation 
 {
     opacity: 0;
@@ -71,6 +85,23 @@ body::-webkit-scrollbar {
     width: 90%;
 }
 
+.subsubtitle
+{
+    font-size: 30px;
+}
+
+.normal-paragraph
+{
+    align-self: flex-start;
+    margin: 5px;
+    padding: 5px;
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
 .divider {
     width: 90%;
     height: 5px;
@@ -101,11 +132,12 @@ body::-webkit-scrollbar {
     margin: 0 auto;
 }
 
-.left-row-container, .right-row-container {
+.row-container {
     display: flex;
     flex: 1;
-    justify-content: center;
-    align-items: center;
+    justify-content: left;
+    align-self: stretch; 
+    text-align: start;
     background-color: rgba(255, 255, 255);
     margin: 20px;
     padding: 10px;
