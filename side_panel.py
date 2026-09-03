@@ -13,6 +13,7 @@ class SidePanel:
         self.elapsed_time = None
         self.current_distance = None
         self.orbital_phase = None
+        self.angular_frequency = None
         self.h_cross = None
         self.h_plus = None
         self.newtonian_velocity = None
@@ -27,6 +28,7 @@ class SidePanel:
         text.append(self.font.render(f"Time elapsed: {self.elapsed_time:.4f}s", True, (255, 255, 255)))
         text.append(self.font.render(f"Current distance: {int(self.current_distance)}m", True,(255, 255, 255)))
         text.append(self.font.render(f"Orbital phase: {self.orbital_phase:.4f} radians", True,(255, 255, 255)))
+        text.append(self.font.render(f"Angular frequency: {self.angular_frequency:.4f} radians", True,(255, 255, 255)))
         text.append(self.font.render(f"H cross: {self.h_cross:e}", True, (255, 255, 255)))
         text.append(self.font.render(f"H plus: {self.h_plus:e}", True, (255, 255, 255)))
         text.append(self.font.render(f"Newtonian velocity: {int(self.newtonian_velocity)} m/s", True, (255, 255, 255)))
