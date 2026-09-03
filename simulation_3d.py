@@ -237,11 +237,7 @@ while running:
         running = False
         continue
 
-    omega_current = numpy.sqrt(
-        (simulation.gravitational_constant * (simulation.bh1_mass + simulation.bh2_mass))
-        / (current_distance ** 3)
-    )
-
+    omega_current = simulation.get_angular_frequency(current_distance)
     orbital_phase += omega_current * dt
 
     physics_radius = current_distance / 2
@@ -299,8 +295,9 @@ while running:
     render_scene(black_hole_faces, ring_faces)
     side_panel.update()
 
-    angle_x += 0.01
+    angle_x += 0.025
     angle_y += 0.01
+    angle_z += 0.02
     elapsed_time += dt
 
     pygame.display.flip()
