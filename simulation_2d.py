@@ -40,8 +40,8 @@ while running:
     t += dt #time elapsed per frame (tick, currently 120 per second)
 
     if current_distance != 0:
-        omega_current = simulation.get_angular_frequency(current_distance)
-        orbital_phase += omega_current * dt
+        angular_frequency = simulation.get_angular_frequency(current_distance)
+        orbital_phase += angular_frequency * dt
     else:
         print("Black holes have merged!")
         running = False

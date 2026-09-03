@@ -237,8 +237,8 @@ while running:
         running = False
         continue
 
-    omega_current = simulation.get_angular_frequency(current_distance)
-    orbital_phase += omega_current * dt
+    angular_frequency = simulation.get_angular_frequency(current_distance)
+    orbital_phase += angular_frequency * dt
 
     physics_radius = current_distance / 2
     visual_radius = physics_radius * VISUAL_SCALE
@@ -288,6 +288,7 @@ while running:
     side_panel.current_distance = current_distance
     side_panel.elapsed_time = elapsed_time
     side_panel.orbital_phase = orbital_phase
+    side_panel.angular_frequency = angular_frequency
     side_panel.newtonian_velocity = v_newton
     side_panel.relativistic_velocity = v_rel
     side_panel.difference = v_diff
