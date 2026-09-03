@@ -1,5 +1,5 @@
 import pygame
-from equations import BlackHoleData, simulation
+from equations import BlackHoleData
 
 class SidePanel:
     def __init__(self, simulation:BlackHoleData, clock, width, height, surface):
