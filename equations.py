@@ -99,39 +99,3 @@ class BlackHoleData:
         v_diff = v_rel - v_newton
 
         return v_newton, v_rel, v_diff
-
-
-# -------------------------------------------------------
-
-
-simulation = BlackHoleData()
-
-divisor = 10000
-dt = 1 / divisor
-orbital_phase = 0.0
-
-on = True
-
-if on:
-    for step in range(25000):
-        t = step * dt
-        current_distance = simulation.calculate_separation_over_time(t)
-
-        if current_distance == 0:
-            print(f"t={t:.4f}s: Black holes have merged.")
-            break
-
-        bh1_pos, bh2_pos = simulation.get_positions(current_distance, orbital_phase)
-
-        h_plus = simulation.waveform_over_time_plus(t, orbital_phase)
-        h_cross = simulation.waveform_over_time_cross(t, orbital_phase)
-
-        print(f"t={t:.4f}s | Separation: {current_distance:.2f}m")
-        print(f"   BH1 Position: [{bh1_pos[0]:.2f}, {bh1_pos[1]:.2f}]")
-        print(f"   BH2 Position: [{bh2_pos[0]:.2f}, {bh2_pos[1]:.2f}]")
-        print(
-            f"   Phase: {orbital_phase:.2f} rad | h_plus: {h_plus:.2e} | h_cross: {h_cross:.2e}\n"
-        )
-
-        omega_current = simulation.get_angular_frequency(current_distance)
-        orbital_phase += omega_current * dt
