@@ -26,7 +26,7 @@
 
                 <div class="container-with-background">
                     <div class="hover-container" data-hover-group="roadmap" 
-                    data-hover-info="Initial setup and configuration of the project. This includes setting up github, creating the files, and initial planning.">
+                    data-hover-info="Initial setup and configuration of the project. This includes setting up GitHub, creating the files, and initial planning.">
                         <p>1</p>
                     </div>
 
@@ -136,9 +136,23 @@
                         <div class="normal-paragraph center-container">
                             <p>
                                 <span class="subsubtitle">Equations</span><br>
-                                The first step to 2D simulation is figuring out the path the black hole takes. To gather this information, we needed to use
-                                one crucial equation:
+                                The first step to the 2D simulations is figuring out the path the black hole takes. To gather this information, 
+                                we needed to use a few crucial equations:<br><br>
+
+                                Separation overtime
+                                \[
+                                    d(t) = \left[ d_0^4 - \frac{256}{5} \frac{G^3 m_1 m_2 M}{c^5} t \right]^{1/4}
+                                \]
+                                where \( d_0 \) is the initial separation at \( t = 0 \). <br><br>
+
+                                Orbital frequency overtime
+                                \[
+                                    \omega(t) = \sqrt{\frac{GM}{d(t)^3}}
+                                \]
+
+                                These equations can be written in Python as follows:
                             </p>
+
                                 <pre><code>def calculate_separation_over_time(self, time):
     inner_term = (self.initial_distance ** 4 - (256 / 5) *
         (
@@ -152,7 +166,32 @@
     if inner_term <= 0:
         return 0.0
 
-    return inner_term ** 0.25</code></pre>
+    return inner_term ** 0.25
+
+def get_angular_frequency(self, separation):
+    if separation <= 0:
+        return 0.0
+    return numpy.sqrt(
+        (self.gravitational_constant * self.total_mass) / (separation**3)
+        )</code></pre>
+
+                            <p>
+                                 The separation overtime equation calculate the distance between two black holes
+                                 at any given moment and the angular frequency equation tells us how quickly the
+                                 black holes spin around each other for their current separation. <br><br>
+
+                                 Extra data was generated as well, such as: waveform overtime, strain amplitude
+                                 changes overtime, and the black hole's velocity difference between newtonian equations
+                                 and relativistic equations. These equations are not relevant to the 2D simulation, but
+                                 they can be found on our GitHub. <br><br>
+
+                            <span class="subsubtitle">Rendering</span><br>
+                                Before rendering in 2D, inital conditions must be set for our black holes. Both black holes
+                                have a mass of 4e30 kilograms (roughly 2 solar masses) and starting positions of (50000, 50000),
+                                (-50000, -50000) kilometers. With these initial measurements, we can plug them into our equations
+                                to get position data. We used PyGame to draw circles onto the screen and plug that position data
+                                into the circle's position. This created the simulation you can see on the left.
+                            </p> 
                         </div>
                     </div>
                 </div>
@@ -177,6 +216,8 @@
         </div>
 
         <script src="javascript.js"></script>
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     </body>
 </html>
