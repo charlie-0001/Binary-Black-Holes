@@ -187,7 +187,7 @@ def get_angular_frequency(self, separation):
 
                             <span class="subsubtitle">Rendering</span><br>
                                 Before rendering in 2D, inital conditions must be set for our black holes. Both black holes
-                                have a mass of 4e30 kilograms (roughly 2 solar masses) and starting positions of (50000, 50000),
+                                have a mass of 4e30 kilograms (roughly 2 solar masses), and starting positions of (50000, 50000),
                                 (-50000, -50000) kilometers. With these initial measurements, we can plug them into our equations
                                 to get position data. We used PyGame to draw circles onto the screen and plug that position data
                                 into the circle's position. This created the simulation you can see on the left.
@@ -200,12 +200,75 @@ def get_angular_frequency(self, separation):
                     <p>Rendering Engine</p>
                 </div>
 
-                <div class="subtitle">
-                    <p>Simulating in 3D</p>
+                <div class="row">
+                    <div class="row-container" style="flex-direction: column;">
+                        <p>
+                            <span class="subsubtitle">Using Trigonometry</span><br>
+                            Initially we decided to use trigonometry to create the 3D rendering engine by following
+                            <a href="https://www.youtube.com/watch?v=D96wb46mjIQ">this youtube video,</a> but after using the
+                            rendering engine more extensively, it proved that using trigonometry wasn't going to be viable
+                            for the future of the project. Using trigonometry for 3D rendering has several drawbacks we learned:
+                        </p>
+                        <ul>
+                            <li>
+                                Trigonometry is slow. The algorithims that python libraries use to calculate sin and cosine 
+                                add significant computation power because they use a formula called the "Taylor Series Polynomials" which
+                                require a lot of math.<br><br>
+
+                                Here is the equation for Taylor Series Polynomials:<br>
+                                $$\sin(x) = x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \frac{x^9}{9!} - \dots$$
+
+                                These trigonometric functions need to be applied on every point which generates significant lag. Combined with
+                                the relatively slow speed of Python compared to other languages, it would not be viable to continue the rendering 
+                                engine using this method.
+                            </li>
+                            <br>
+                            <li>
+                                Using trigonometry to render is messy and difficult to understand. The algorithm used in the video we
+                                based our old code off of was very math heavy and used uncommon operators like
+                                arctan, arcsin, and modulo. The use of these operators made it difficult to visualize what was going on
+                                when we made edits to the program, and subsequently made the code difficult to understand.
+                            </li>
+                            <br>
+                            <li>
+                                After adding pitch, yaw, and roll to the simulation, the meshes we imported were being squished in ways we didn't
+                                expect. This was ultimately the fault of the trigonometric 3D renderer, and fixing this would've likely required an
+                                overhaul of the entire system.
+                            </li>
+                            <br>
+                        </ul>
+                        <p>
+                            Ultimately, the bottlenecks described above made us switch to using linear algebra, which is significantly easier to write
+                            and visualize than trigonometry, and it is less computationally heavy. After learning the basics of linear algebra from
+                            <a href="https://www.youtube.com/watch?v=fNk_zzaMoSs&list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab">3Blue1Brown's linear algebra playlist,</a>
+                            and more extensively in <a href="https://artofproblemsolving.com/store/book/aops-vol2?srsltid=AfmBOorJNQQBLIvTWUUfs_PGmxtufS-AB9daiK3i0RS3Bd5sI3pXjKzS">the Art of Problem Solving, Volume 2: and Beyond,</a>
+                            we could use rotation matrixes to map each Cartesian coordinate (x, y, and z) and calculate their dot product to 
+                            construct where a 3D coordinate would be in 2D. Then, we used simple vector translation (addition) to position the
+                            black holes in their orbit. To simulate tilting the camera, a 2D rotation matrix all around the X axis is applied to
+                            the world coordinates like this:
+
+                            $$\begin{bmatrix} x_{\text{pitch}} \\ y_{\text{pitch}} \\ z_{\text{pitch}} \end{bmatrix} = \begin{bmatrix} x_{\text{world}} \\ y_{\text{world}} \cos\theta_{\text{pitch}} - z_{\text{world}} \sin\theta_{\text{pitch}} \\ y_{\text{world}} \sin\theta_{\text{pitch}} + z_{\text{world}} \cos\theta_{\text{pitch}} \end{bmatrix}$$
+
+                            Finally, to add perspective projection, our engine compresses triangles that are further away with these equations:
+                            
+                            $$x_{\text{proj}} = \frac{(X - X_{\text{cam}}) \cdot f}{Z + d_{\text{cam}}} + c_x, \quad y_{\text{proj}} = \frac{(Y - Y_{\text{cam}}) \cdot f}{Z + d_{\text{cam}}} + c_y$$
+                            Where: <br>
+                            f is the focal length.<br>
+                            Dcam is the camera distance.<br>
+                            Cx, Cy represent the 2D screen center offsets.
+                            
+                            <br><br>
+
+
+                            <span class="subsubtitle">The Alpha Channel</span><br>
+                            PyGame does not support an alpha channel directly into a polygon object, so to create transparent objects we created a new 
+                            surface with the alpha channel we wanted.
+                        </p>
+                    </div>
                 </div>
 
                 <div class="subtitle">
-                    <p>Website</p>
+                    <p>Simulating in 3D</p>
                 </div>
 
                 <div class="subtitle">
@@ -216,8 +279,6 @@ def get_angular_frequency(self, separation):
         </div>
 
         <script src="javascript.js"></script>
-        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
+        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-svg.js"></script>
     </body>
 </html>
