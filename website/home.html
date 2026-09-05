@@ -268,7 +268,7 @@ def get_angular_frequency(self, separation):
                             Our read_obj() function can be found on our GitHub in the 3d_simulation file, but it's not placed here due to the space
                             it takes up. To start, any 3D rendering requires files that a machine can parse to figure out what points are placed where.
                             The files we chose for 3D models were obj and mtl files exported from Blender. To parse the mtl files, we looked for 
-                            any lines with "Kd" and stored those values in a list. This controls color. To parse the obj files, we looked for any lines with
+                            any lines with "Kd". This controls color. To parse the obj files, we looked for any lines with
                             "v" and "f" which tells us the coordinates of points and what points connect with others to form faces respectively. This creates 
                             the shape. All of these values are stored in lists and returned to give all of the data we need to render.
 
@@ -278,6 +278,19 @@ def get_angular_frequency(self, separation):
 
                 <div class="subtitle">
                     <p>Simulating in 3D</p>
+                </div>
+
+                <div class="row">
+                    <div class="row-container" style="flex-direction: column;">
+                        <p>
+                            <span class="subsubtitle">Side Panel</span><br>
+
+                            <span class="subsubtitle">Rendering</span><br>
+
+                            <span class="subsubtitle">3D Modelling</span><br>
+
+                        </p>
+                    </div>
                 </div>
 
                 <div class="subtitle">
