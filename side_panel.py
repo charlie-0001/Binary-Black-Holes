@@ -35,9 +35,9 @@ class SidePanel:
         text.append(self.font.render(f"Relativistic velocity: {int(self.relativistic_velocity)} m/s", True, (255, 255, 255)))
         text.append(self.font.render(f"Velocity difference: {int(self.difference)} m/s", True, (255, 255, 255)))
 
-        panel_rect_outline = pygame.rect.Rect(0, 0, 325, 1000)
+        panel_rect_outline = pygame.rect.Rect(0, 0, 330, 1000)
         pygame.draw.rect(self.surface, (255, 255, 255), panel_rect_outline)
-        panel_rect = pygame.rect.Rect(0, 0, 320, 1000)
+        panel_rect = pygame.rect.Rect(0, 0, 325, 1000)
         pygame.draw.rect(self.surface, (0, 0, 0), panel_rect)
 
         pos = 5
