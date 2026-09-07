@@ -14,7 +14,7 @@
 
         <div class="main-container load-animation">
             <div class="title">
-                <p>Binary Black Holes</p>
+                <p>Binary Black Holes <span style="font-size: 20px;">by Charlie Geiger</span></p>
             </div>
 
             <hr class="divider divider-transparent-right">
@@ -129,7 +129,7 @@
 
                 <div class="row" style="align-items: stretch;">
                     <div class="row-container center-container">
-                        <video autoplay muted loop playsinline width="75%" src="videos/2dSim.mp4" type="video/mp4"></video>
+                        <video autoplay muted loop playsinline width="100%" src="videos/2dSim.mp4" type="video/mp4"></video>
                     </div>
 
                     <div class="row-container">
@@ -281,13 +281,30 @@ def get_angular_frequency(self, separation):
                 </div>
 
                 <div class="row">
+                    <div class="row-container center-container">
+                        <video autoplay muted loop playsinline width="100%" src="videos/3dSim.mp4" type="video/mp4"></video>
+                    </div>
                     <div class="row-container" style="flex-direction: column;">
                         <p>
-                            <span class="subsubtitle">Side Panel</span><br>
+                            <span class="subsubtitle">Overview</span><br>
+                            The goal of the 3D simulation was to create a more interactive and interesting simulation compared
+                            to the 2D simulation. Some of the core features that we wanted to add were a side panel, 3D models, 
+                            a background, and camera controls. <br><br>
 
-                            <span class="subsubtitle">Rendering</span><br>
+
+                            <span class="subsubtitle">Side Panel</span><br>
+                            The side panel is what can be seen on the video playing on the left. It displays all of the information
+                            calculated in our program with the physics equations previously mentioned in the 2D simulation. To create 
+                            the side panel, we simply created a class for it with all the metrics we wanted stored inside of it. Then, 
+                            we updated this class every frame with equation data and blitted it, along with some text, onto the left 
+                            side of the screen.<br><br>
 
                             <span class="subsubtitle">3D Modelling</span><br>
+                            3D modelling was done on Blender. To create the core black hole (the black sphere inside the orange outline),
+                            we simply added an icosphere and gave it a black color. To create the outline and ring we added an icosphere 
+                            and a torus around it. Then, we joined the two meshes and gave them an orange color. Originally, we wanted the
+                            3D models to have significantly more triangles, but after running into significant lag while rendering, we decided
+                            to keep it low poly to maintain a stable 90 frames per second during simulation runtime.
 
                         </p>
                     </div>
@@ -295,6 +312,34 @@ def get_angular_frequency(self, separation):
 
                 <div class="subtitle">
                     <p>Evaluation</p>
+                </div>
+
+                <div class="row">
+                    <div class="row-container">
+                        <p>
+                            <span class="subsubtitle">Project Management</span><br>
+                            Project management was a hurdle when starting. GitHub wasn't a software we weren't accustomed to yet and we had only 
+                            used it a handful of times. However, after starting the respository and learning our IDE's better, GitHub became an 
+                            integral part of coding and changes were routinely comitted at least once per hour. Although comitting and pushing
+                            was something we never forgot, the project tab on our GitHub was something we struggled to keep up with. Ideally,
+                            we wanted images of progress and summaries of coding sessions written in the comments of our project's issues, but
+                            those were never added.<br><br>
+                            <span class="subsubtitle">2D Simulation</span><br>
+                            The 2D simulation phase was the first real part of the project and by far the quickest one. Rewriting physics equations
+                            into Python using NumPy was very straightforward and our previous experience with PyGame only made mapping the equations
+                            onto virtual black holes even easier.<br><br>
+                            <span class="subsubtitle">3D simulation</span><br>
+                            hi<br><br>
+                            <span class="subsubtitle">Website</span><br>
+                            hi<br><br>
+                            <span class="subsubtitle">Overall</span><br>
+                            Overall, the project was a success. Before beginning this, our understanding of object oriented programming and 
+                            Python was much weaker. This was one of our first projects created with no outside help from others(e.g. tutors or teachers),
+                            and it refined our skills to the point where we could write complex pieces of code without directly searching up
+                            the answers or getting significant hints from the internet / AI.
+
+                        </p>
+                    </div>
                 </div>
 
             </div>
