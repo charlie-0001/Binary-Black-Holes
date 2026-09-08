@@ -51,6 +51,12 @@ while running:
 
     pygame.display.flip()
 
+    print(f"separation: {current_distance}\n"
+          f"bh1x, bh1y: {-r_current * numpy.cos(orbital_phase)}, {-r_current * numpy.sin(orbital_phase)}"
+          f"bh2x, bh2y: {r_current * numpy.cos(orbital_phase)}, {r_current * numpy.sin(orbital_phase)}")
+
+
+
     clock.tick(120)
 
 pygame.quit()
